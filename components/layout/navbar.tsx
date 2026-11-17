@@ -79,7 +79,7 @@ function Navbar({ user = null, onLogout }: NavbarProps) {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/80 bg-background/85 backdrop-blur-md">
-      <Container className="flex h-16 items-center justify-between gap-6 lg:h-[4.5rem]">
+      <Container className="flex h-16 items-center justify-between gap-6 lg:h-18">
         <Logo />
 
         <nav
