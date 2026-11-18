@@ -3,9 +3,10 @@ import { cn } from "cn"
 
 type LogoProps = {
   className?: string
+  wordmarkClassName?: string
 }
 
-function Logo({ className }: LogoProps) {
+function Logo({ className, wordmarkClassName }: LogoProps) {
   return (
     <Link
       href="/"
@@ -43,7 +44,7 @@ function Logo({ className }: LogoProps) {
           />
         </svg>
       </span>
-      <span className="font-heading text-lg font-semibold tracking-tight text-foreground">
+      <span className={cn("font-heading text-lg font-semibold tracking-tight text-foreground", wordmarkClassName)}>
         Rentora
       </span>
     </Link>
