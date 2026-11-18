@@ -5,6 +5,7 @@ import { CustomerReviews } from "@/components/home/customer-reviews";
 import { FeaturedEquipmentSection } from "@/components/home/featured-equipment-section";
 import { FeaturedEquipmentSkeleton } from "@/components/home/featured-equipment-skeleton";
 import { Hero } from "@/components/home/hero";
+import { HowItWorks } from "@/components/home/how-it-works";
 import { WhyChooseUs } from "@/components/home/why-choose-us";
 
 export default function Home() {
@@ -17,6 +18,7 @@ export default function Home() {
       <EquipmentCategories />
       <WhyChooseUs />
       <CustomerReviews />
+      <HowItWorks />
     </main>
   );
 }
