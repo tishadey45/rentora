@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Sora } from "next/font/google";
 import "./globals.css";
-import { Navbar } from "@/components/layout/navbar";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/providers/theme-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -48,11 +47,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       suppressHydrationWarning
+      data-scroll-behavior="smooth"
       className={`${inter.variable} ${sora.variable} h-full`}
     >
       <body className="flex min-h-full flex-col">
         <ThemeProvider>
-          <Navbar />
           {children}
         </ThemeProvider>
       </body>
