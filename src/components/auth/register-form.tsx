@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { H1, Muted } from "@/components/ui/typography"
 import { authClient } from "@/lib/auth-client";
 import { redirect } from "next/navigation";
+import toast from "react-hot-toast";
 
 const passwordRequirements = [
   "At least one uppercase letter",
@@ -36,11 +37,13 @@ function RegisterForm() {
     });
 
     if (data) {
+      toast.success("Registration successful!");
       console.log(data);
       redirect("/");
     }
 
     if (error) {
+      toast.error("Something went wrong!");
       console.log(error);
     }
   };
