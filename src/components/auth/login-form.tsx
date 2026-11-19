@@ -1,16 +1,45 @@
-"use client"
+"use client";
 
-import Link from "next/link"
+import Link from "next/link";
 
-import { GoogleAuthButton } from "@/components/auth/google-auth-button"
-import { PasswordInput } from "@/components/auth/password-input"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { H1, Muted } from "@/components/ui/typography"
+import { GoogleAuthButton } from "@/components/auth/google-auth-button";
+import { PasswordInput } from "@/components/auth/password-input";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { H1, Muted } from "@/components/ui/typography";
+import { authClient } from "@/lib/auth-client";
+import toast from "react-hot-toast";
 
 function LoginForm() {
+  const onSubmit = async (e: React.SubmitEvent<HTMLElement>) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const user = Object.fromEntries(formData.entries()) as {
+      email: string;
+      password: string;
+    };
+
+    console.log(user);
+
+    const { data, error } = await authClient.signIn.email({
+      ...user,
+      callbackURL: "/",
+    });
+
+    if (data) {
+      toast.success("Sign In successful!");
+      console.log(data);
+    }
+
+    if (error) {
+      toast.error("Something went error!");
+      console.log(error);
+    }
+  };
+
   return (
     <Card className="gap-6 p-6 sm:p-8">
       <div>
@@ -21,8 +50,9 @@ function LoginForm() {
       </div>
 
       <form
+        onSubmit={onSubmit}
         noValidate
-        onSubmit={(event) => event.preventDefault()}
+        // onSubmit={(event) => event.preventDefault()}
         className="space-y-5"
       >
         <div className="space-y-2">
@@ -45,12 +75,7 @@ function LoginForm() {
           placeholder="Enter your password"
         />
 
-        <Button
-          type="submit"
-          variant="brand"
-          size="lg"
-          className="w-full"
-        >
+        <Button type="submit" variant="brand" size="lg" className="w-full">
           Log in
         </Button>
       </form>
@@ -75,7 +100,7 @@ function LoginForm() {
         </Link>
       </Muted>
     </Card>
-  )
+  );
 }
 
-export { LoginForm }
+export { LoginForm };

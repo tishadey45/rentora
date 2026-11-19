@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button"
+import { authClient } from "@/lib/auth-client";
+ const handleGoogleSignIn = async () => {
+    await authClient.signIn.social({
+      provider: "google",
+    });
 
+  };
 function GoogleIcon() {
   return (
     <svg
@@ -35,6 +41,7 @@ type GoogleAuthButtonProps = {
 function GoogleAuthButton({ label }: GoogleAuthButtonProps) {
   return (
     <Button
+    onClick={handleGoogleSignIn}
       type="button"
       variant="outline"
       size="lg"

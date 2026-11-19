@@ -9,6 +9,8 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { H1, Muted } from "@/components/ui/typography"
+import { authClient } from "@/lib/auth-client";
+import { redirect } from "next/navigation";
 
 const passwordRequirements = [
   "At least one uppercase letter",
@@ -17,6 +19,32 @@ const passwordRequirements = [
 ]
 
 function RegisterForm() {
+   const onSubmit = async (e: React.SubmitEvent<HTMLElement>) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const user = Object.fromEntries(formData.entries()) as {
+      name: string;
+      email: string;
+      image: string;
+      password: string;
+    };
+
+    const { data, error } = await authClient.signUp.email({
+      ...user,
+      callbackURL: "/",
+    });
+
+    if (data) {
+      console.log(data);
+      redirect("/");
+    }
+
+    if (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <Card className="gap-6 p-6 sm:p-8">
       <div>
@@ -28,7 +56,7 @@ function RegisterForm() {
 
       <form
         noValidate
-        onSubmit={(event) => event.preventDefault()}
+        onSubmit={onSubmit}
         className="space-y-5"
       >
         <div className="space-y-2">
