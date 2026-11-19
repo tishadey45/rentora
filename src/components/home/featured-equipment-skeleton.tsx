@@ -21,7 +21,7 @@ function FeaturedEquipmentSkeleton() {
             key={key}
             className="overflow-hidden rounded-xl border border-border bg-card shadow-card"
           >
-            <Skeleton className="aspect-[4/3] w-full rounded-none" />
+            <Skeleton className="aspect-4/3 w-full rounded-none" />
             <div className="flex flex-col gap-4 p-6">
               <div className="flex flex-col gap-2">
                 <Skeleton className="h-5 w-2/3" />
