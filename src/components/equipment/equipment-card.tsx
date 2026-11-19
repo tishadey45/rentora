@@ -95,7 +95,7 @@ function EquipmentCard({
           </span>
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
+        <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
           <span className="inline-flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
             {equipment.owner.verified ? (
               <BadgeCheck
@@ -105,14 +105,14 @@ function EquipmentCard({
             ) : (
               <User aria-hidden="true" className="size-4 shrink-0" />
             )}
-            <span className="truncate">{equipment.owner.name}</span>
+            <span className="min-w-0 break-words">{equipment.owner.name}</span>
           </span>
           <Link
             href={href}
             aria-label={`View details for ${equipment.name}`}
             className={cn(
               buttonVariants({ variant: "outline", size: "sm" }),
-              "shrink-0"
+              "h-11 w-full shrink-0 px-4 sm:w-auto"
             )}
           >
             View Details
