@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { H1, Muted } from "@/components/ui/typography";
 import { authClient } from "@/lib/auth-client";
+import { getRedirectFromLocation } from "@/lib/safe-redirect";
 import toast from "react-hot-toast";
 
 function LoginForm() {
@@ -26,7 +27,7 @@ function LoginForm() {
 
     const { data, error } = await authClient.signIn.email({
       ...user,
-      callbackURL: "/",
+      callbackURL: getRedirectFromLocation(),
     });
 
     if (data) {

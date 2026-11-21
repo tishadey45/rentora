@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button"
 import { authClient } from "@/lib/auth-client";
+import { getRedirectFromLocation } from "@/lib/safe-redirect";
+
  const handleGoogleSignIn = async () => {
     await authClient.signIn.social({
       provider: "google",
+      callbackURL: getRedirectFromLocation(),
     });
 
   };
