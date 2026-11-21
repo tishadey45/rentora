@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 
 import { Footer } from "@/components/layout/footer"
-import { Navbar } from "@/components/layout/navbar"
+import { NavbarAuth } from "@/components/layout/navbar-auth"
 
 type PublicLayoutProps = {
   children: ReactNode
@@ -10,7 +10,7 @@ type PublicLayoutProps = {
 export default function PublicLayout({ children }: PublicLayoutProps) {
   return (
     <>
-      <Navbar />
+      <NavbarAuth />
       {children}
       <Footer />
     </>
