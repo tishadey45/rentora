@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import {
   cubicBezier,
   MotionConfig,
@@ -40,15 +39,15 @@ type FeaturedEquipmentProps = {
   equipment: Equipment[]
   error?: string | null
   isAuthenticated?: boolean
+  onRetry: () => void
 }
 
 function FeaturedEquipment({
   equipment,
   error,
   isAuthenticated = false,
+  onRetry,
 }: FeaturedEquipmentProps) {
-  const router = useRouter()
-
   return (
     <MotionConfig reducedMotion="user">
       <Section
@@ -58,10 +57,7 @@ function FeaturedEquipment({
         description={featuredEquipmentCopy.description}
       >
         {error ? (
-          <FeaturedEquipmentError
-            message={error}
-            onRetry={() => router.refresh()}
-          />
+          <FeaturedEquipmentError message={error} onRetry={onRetry} />
         ) : equipment.length === 0 ? (
           <FeaturedEquipmentEmpty />
         ) : (
