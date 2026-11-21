@@ -1,7 +1,9 @@
 "use client"
 
-import Image from "next/image"
-import { Upload } from "lucide-react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { ImageOff } from "lucide-react"
+import toast from "react-hot-toast"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -17,22 +19,122 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Muted } from "@/components/ui/typography"
-import { EQUIPMENT_CATEGORIES } from "@/types/equipment"
+import { createEquipment } from "@/lib/equipment/create-equipment"
+import {
+  EQUIPMENT_CATEGORIES,
+  type EquipmentAvailability,
+  type EquipmentCategory,
+  type RentalType,
+} from "@/types/equipment"
 
-const rentalTypes = ["Daily", "Weekly", "Monthly"]
+const rentalTypes: RentalType[] = ["Daily", "Weekly", "Monthly"]
+
 const conditions = ["Excellent", "Good", "Fair"]
+
+const availabilityOptions: { value: EquipmentAvailability; label: string }[] = [
+  { value: "available", label: "Available" },
+  { value: "limited", label: "Limited" },
+  { value: "unavailable", label: "Unavailable" },
+]
+
+type FormValues = {
+  name: string
+  description: string
+  category: EquipmentCategory
+  location: string
+  brand: string
+  model: string
+  condition: string
+  rentalPrice: string
+  rentalType: RentalType
+  availableQuantity: string
+  availability: EquipmentAvailability
+  image: string
+  imageAlt: string
+  rentalTerms: string
+}
+
+const initialValues: FormValues = {
+  name: "",
+  description: "",
+  category: "Construction",
+  location: "",
+  brand: "",
+  model: "",
+  condition: "Excellent",
+  rentalPrice: "",
+  rentalType: "Daily",
+  availableQuantity: "1",
+  availability: "available",
+  image: "",
+  imageAlt: "",
+  rentalTerms: "",
+}
+
+function isHttpUrl(value: string) {
+  try {
+    const url = new URL(value)
+    return url.protocol === "http:" || url.protocol === "https:"
+  } catch {
+    return false
+  }
+}
+
+function validate(values: FormValues): Record<string, string> {
+  const errors: Record<string, string> = {}
+
+  if (!values.name.trim()) {
+    errors.name = "Equipment name is required."
+  }
+
+  if (!values.description.trim()) {
+    errors.description = "Description is required."
+  }
+
+  if (!values.location.trim()) {
+    errors.location = "Location is required."
+  }
+
+  const price = Number(values.rentalPrice)
+  if (!values.rentalPrice.trim() || !Number.isFinite(price) || price <= 0) {
+    errors.rentalPrice = "Enter a rental price greater than 0."
+  }
+
+  const quantity = Number(values.availableQuantity)
+  if (
+    !values.availableQuantity.trim() ||
+    !Number.isInteger(quantity) ||
+    quantity < 1
+  ) {
+    errors.availableQuantity = "Enter a whole quantity of at least 1."
+  }
+
+  if (!values.image.trim()) {
+    errors.image = "Image URL is required."
+  } else if (!isHttpUrl(values.image.trim())) {
+    errors.image = "Enter a valid http(s) image URL."
+  }
+
+  if (!values.rentalTerms.trim()) {
+    errors.rentalTerms = "Rental terms are required."
+  }
+
+  return errors
+}
 
 function Field({
   label,
   htmlFor,
   required = false,
   hint,
+  error,
   children,
 }: {
   label: string
   htmlFor: string
   required?: boolean
   hint?: string
+  error?: string
   children: React.ReactNode
 }) {
   return (
@@ -46,23 +148,94 @@ function Field({
         ) : null}
       </Label>
       {children}
-      {hint ? <Muted className="text-xs">{hint}</Muted> : null}
+      {error ? (
+        <p className="text-xs font-medium text-danger">{error}</p>
+      ) : hint ? (
+        <Muted className="text-xs">{hint}</Muted>
+      ) : null}
     </div>
   )
 }
 
 type EquipmentFormProps = {
+  ownerId: string
   ownerName: string
   ownerEmail: string
 }
 
-function EquipmentForm({ ownerName, ownerEmail }: EquipmentFormProps) {
+function EquipmentForm({ ownerId, ownerName, ownerEmail }: EquipmentFormProps) {
+  const router = useRouter()
+  const [values, setValues] = useState<FormValues>(initialValues)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [failedPreviewUrl, setFailedPreviewUrl] = useState<string | null>(null)
+
+  function update<K extends keyof FormValues>(field: K, value: FormValues[K]) {
+    setValues((current) => ({ ...current, [field]: value }))
+    setErrors((current) => {
+      if (!current[field]) return current
+      const next = { ...current }
+      delete next[field]
+      return next
+    })
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (submitting) return
+
+    const validation = validate(values)
+    if (Object.keys(validation).length > 0) {
+      setErrors(validation)
+      toast.error("Please fix the highlighted fields.")
+      return
+    }
+
+    setSubmitting(true)
+    setErrors({})
+
+    const result = await createEquipment({
+      name: values.name.trim(),
+      description: values.description.trim(),
+      category: values.category,
+      brand: values.brand.trim() || undefined,
+      model: values.model.trim() || undefined,
+      condition: values.condition,
+      rentalPrice: Number(values.rentalPrice),
+      rentalType: values.rentalType,
+      location: values.location.trim(),
+      availableQuantity: Number(values.availableQuantity),
+      availability: values.availability,
+      image: values.image.trim(),
+      imageAlt: values.imageAlt.trim() || undefined,
+      rentalTerms: values.rentalTerms.trim(),
+      owner: {
+        id: ownerId,
+        name: ownerName,
+        email: ownerEmail,
+        verified: false,
+      },
+    })
+
+    if (result.status === "error") {
+      setSubmitting(false)
+      setErrors({ form: result.message })
+      toast.error(result.message)
+      return
+    }
+
+    toast.success("Equipment added and submitted for review.")
+    setValues(initialValues)
+    router.push("/dashboard/my-equipment")
+    router.refresh()
+  }
+
+  const imageUrl = values.image.trim()
+  const showPreview = imageUrl.length > 0 && failedPreviewUrl !== imageUrl
+
   return (
-    <form
-      noValidate
-      onSubmit={(event) => event.preventDefault()}
-      className="flex flex-col gap-6"
-    >
+    <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-6">
       <Card className="p-6">
         <h2 className="font-heading text-lg font-semibold">
           Equipment details
@@ -73,27 +246,48 @@ function EquipmentForm({ ownerName, ownerEmail }: EquipmentFormProps) {
 
         <div className="mt-6 grid gap-5 md:grid-cols-2">
           <div className="md:col-span-2">
-            <Field label="Equipment Name" htmlFor="equipment-name" required>
+            <Field
+              label="Equipment Name"
+              htmlFor="equipment-name"
+              required
+              error={errors.name}
+            >
               <Input
                 id="equipment-name"
+                value={values.name}
+                onChange={(event) => update("name", event.target.value)}
                 placeholder="e.g. 20T Hydraulic Excavator"
                 className="h-11"
+                aria-invalid={Boolean(errors.name)}
               />
             </Field>
           </div>
 
           <div className="md:col-span-2">
-            <Field label="Description" htmlFor="equipment-description" required>
+            <Field
+              label="Description"
+              htmlFor="equipment-description"
+              required
+              error={errors.description}
+            >
               <Textarea
                 id="equipment-description"
+                value={values.description}
+                onChange={(event) => update("description", event.target.value)}
                 placeholder="Describe the equipment, its capabilities, and what is included."
                 rows={4}
+                aria-invalid={Boolean(errors.description)}
               />
             </Field>
           </div>
 
           <Field label="Category" htmlFor="equipment-category" required>
-            <Select defaultValue="Construction">
+            <Select
+              value={values.category}
+              onValueChange={(value) =>
+                update("category", value as EquipmentCategory)
+              }
+            >
               <SelectTrigger id="equipment-category" className="h-11 w-full">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
@@ -107,17 +301,27 @@ function EquipmentForm({ ownerName, ownerEmail }: EquipmentFormProps) {
             </Select>
           </Field>
 
-          <Field label="Location" htmlFor="equipment-location" required>
+          <Field
+            label="Location"
+            htmlFor="equipment-location"
+            required
+            error={errors.location}
+          >
             <Input
               id="equipment-location"
+              value={values.location}
+              onChange={(event) => update("location", event.target.value)}
               placeholder="City, State"
               className="h-11"
+              aria-invalid={Boolean(errors.location)}
             />
           </Field>
 
           <Field label="Brand" htmlFor="equipment-brand">
             <Input
               id="equipment-brand"
+              value={values.brand}
+              onChange={(event) => update("brand", event.target.value)}
               placeholder="e.g. Caterpillar"
               className="h-11"
             />
@@ -126,6 +330,8 @@ function EquipmentForm({ ownerName, ownerEmail }: EquipmentFormProps) {
           <Field label="Model" htmlFor="equipment-model">
             <Input
               id="equipment-model"
+              value={values.model}
+              onChange={(event) => update("model", event.target.value)}
               placeholder="e.g. 320 GC"
               className="h-11"
             />
@@ -136,7 +342,10 @@ function EquipmentForm({ ownerName, ownerEmail }: EquipmentFormProps) {
             htmlFor="equipment-condition"
             required
           >
-            <Select defaultValue="Excellent">
+            <Select
+              value={values.condition}
+              onValueChange={(value) => update("condition", String(value))}
+            >
               <SelectTrigger id="equipment-condition" className="h-11 w-full">
                 <SelectValue placeholder="Select condition" />
               </SelectTrigger>
@@ -144,6 +353,31 @@ function EquipmentForm({ ownerName, ownerEmail }: EquipmentFormProps) {
                 {conditions.map((condition) => (
                   <SelectItem key={condition} value={condition}>
                     {condition}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field
+            label="Availability"
+            htmlFor="equipment-availability"
+            required
+            hint="How available this equipment is right now."
+          >
+            <Select
+              value={values.availability}
+              onValueChange={(value) =>
+                update("availability", value as EquipmentAvailability)
+              }
+            >
+              <SelectTrigger id="equipment-availability" className="h-11 w-full">
+                <SelectValue placeholder="Select availability" />
+              </SelectTrigger>
+              <SelectContent>
+                {availabilityOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -159,18 +393,31 @@ function EquipmentForm({ ownerName, ownerEmail }: EquipmentFormProps) {
         </Muted>
 
         <div className="mt-6 grid gap-5 md:grid-cols-3">
-          <Field label="Rental Price (USD)" htmlFor="equipment-price" required>
+          <Field
+            label="Rental Price (USD)"
+            htmlFor="equipment-price"
+            required
+            error={errors.rentalPrice}
+          >
             <Input
               id="equipment-price"
               type="number"
               min="0"
+              value={values.rentalPrice}
+              onChange={(event) => update("rentalPrice", event.target.value)}
               placeholder="420"
               className="h-11"
+              aria-invalid={Boolean(errors.rentalPrice)}
             />
           </Field>
 
           <Field label="Rental Type" htmlFor="equipment-rental-type" required>
-            <Select defaultValue="Daily">
+            <Select
+              value={values.rentalType}
+              onValueChange={(value) =>
+                update("rentalType", value as RentalType)
+              }
+            >
               <SelectTrigger
                 id="equipment-rental-type"
                 className="h-11 w-full"
@@ -191,13 +438,19 @@ function EquipmentForm({ ownerName, ownerEmail }: EquipmentFormProps) {
             label="Available Quantity"
             htmlFor="equipment-quantity"
             required
+            error={errors.availableQuantity}
           >
             <Input
               id="equipment-quantity"
               type="number"
               min="1"
+              value={values.availableQuantity}
+              onChange={(event) =>
+                update("availableQuantity", event.target.value)
+              }
               placeholder="1"
               className="h-11"
+              aria-invalid={Boolean(errors.availableQuantity)}
             />
           </Field>
 
@@ -219,11 +472,15 @@ function EquipmentForm({ ownerName, ownerEmail }: EquipmentFormProps) {
               label="Rental Terms and Conditions"
               htmlFor="equipment-terms"
               required
+              error={errors.rentalTerms}
             >
               <Textarea
                 id="equipment-terms"
+                value={values.rentalTerms}
+                onChange={(event) => update("rentalTerms", event.target.value)}
                 placeholder="Add pickup, delivery, usage, and return terms."
                 rows={4}
+                aria-invalid={Boolean(errors.rentalTerms)}
               />
             </Field>
           </div>
@@ -233,36 +490,59 @@ function EquipmentForm({ ownerName, ownerEmail }: EquipmentFormProps) {
       <Card className="p-6">
         <h2 className="font-heading text-lg font-semibold">Equipment image</h2>
         <Muted className="mt-1">
-          Add a clear photo so renters know what to expect.
+          Paste a direct image URL so renters know what to expect.
         </Muted>
 
         <div className="mt-6 grid gap-5 sm:grid-cols-[220px_1fr]">
           <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-border bg-muted">
-            <Image
-              src="/images/equipment/excavator.jpg"
-              alt="Sample equipment image preview"
-              fill
-              sizes="(min-width: 640px) 220px, 100vw"
-              className="object-cover"
-            />
-            <span className="absolute inset-x-0 bottom-0 bg-navy-950/65 px-3 py-2 text-center text-xs font-medium text-white">
-              Sample preview
-            </span>
+            {showPreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={imageUrl}
+                alt="Equipment image preview"
+                className="size-full object-cover"
+                onError={() => setFailedPreviewUrl(imageUrl)}
+              />
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center text-muted-foreground">
+                <ImageOff aria-hidden="true" className="size-6" />
+                <span className="text-xs font-medium">Image preview</span>
+              </div>
+            )}
           </div>
 
-          <div className="flex flex-col justify-center gap-3 rounded-xl border border-dashed border-border p-5">
-            <span className="grid size-11 place-items-center rounded-lg bg-emerald-soft text-emerald-strong">
-              <Upload aria-hidden="true" className="size-5" />
-            </span>
-            <div>
-              <p className="text-sm font-medium">Upload equipment image</p>
-              <Muted className="mt-1 text-xs">
-                Image upload is UI-only. ImgBB integration will be added later.
-              </Muted>
-            </div>
-            <Button type="button" variant="outline" size="sm" className="w-fit">
-              Choose image
-            </Button>
+          <div className="flex flex-col gap-5">
+            <Field
+              label="Image URL"
+              htmlFor="equipment-image"
+              required
+              hint="Use a direct link to an image, e.g. https://images.example.com/photo.jpg"
+              error={errors.image}
+            >
+              <Input
+                id="equipment-image"
+                type="url"
+                value={values.image}
+                onChange={(event) => update("image", event.target.value)}
+                placeholder="https://images.example.com/excavator.jpg"
+                className="h-11"
+                aria-invalid={Boolean(errors.image)}
+              />
+            </Field>
+
+            <Field
+              label="Image alt text"
+              htmlFor="equipment-image-alt"
+              hint="Optional. Describe the image for accessibility."
+            >
+              <Input
+                id="equipment-image-alt"
+                value={values.imageAlt}
+                onChange={(event) => update("imageAlt", event.target.value)}
+                placeholder="Yellow excavator on a construction site"
+                className="h-11"
+              />
+            </Field>
           </div>
         </div>
       </Card>
@@ -297,10 +577,20 @@ function EquipmentForm({ ownerName, ownerEmail }: EquipmentFormProps) {
 
       <div className="flex flex-col items-start justify-between gap-4 rounded-xl border border-border bg-card p-5 shadow-card sm:flex-row sm:items-center">
         <Muted className="text-xs">
-          This form is a static preview. Nothing will be sent to the server.
+          {errors.form ?? (
+            <>
+              New listings are submitted for review and appear as pending until
+              an admin approves them.
+            </>
+          )}
         </Muted>
-        <Button type="submit" variant="brand" size="lg">
-          Submit for approval
+        <Button
+          type="submit"
+          variant="brand"
+          size="lg"
+          disabled={submitting}
+        >
+          {submitting ? "Submitting..." : "Submit for approval"}
         </Button>
       </div>
     </form>

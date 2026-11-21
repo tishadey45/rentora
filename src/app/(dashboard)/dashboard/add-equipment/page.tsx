@@ -11,7 +11,11 @@ export default async function AddEquipmentPage() {
         title="Add Equipment"
         description="Create a new listing for the Rentora marketplace. New equipment starts in pending review."
       />
-      <EquipmentForm ownerName={session.user.name} ownerEmail={session.user.email} />
+      <EquipmentForm
+        ownerId={session.user.id}
+        ownerName={session.user.name}
+        ownerEmail={session.user.email}
+      />
     </div>
   )
 }
