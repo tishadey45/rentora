@@ -4,6 +4,8 @@ import type {
   RentalType,
 } from "@/types/equipment"
 
+import { apiFetch } from "@/lib/api-client"
+
 const REQUEST_TIMEOUT_MS = 8000
 
 export type CreateEquipmentOwner = {
@@ -52,7 +54,7 @@ export async function createEquipment(
   }
 
   try {
-    const response = await fetch(`${apiUrl}/api/v1/equipment`, {
+    const response = await apiFetch("/api/v1/equipment", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...input, isApproved: false }),
