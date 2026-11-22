@@ -6,6 +6,8 @@ import { requireDashboardRole } from "@/lib/dashboard-session"
 import { apiFetch } from "@/lib/api-client"
 import type { MyEquipmentItem } from "@/lib/equipment/get-my-equipment"
 
+export const instant = false
+
 export default async function EditEquipmentPage({
   params,
 }: {

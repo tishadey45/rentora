@@ -38,14 +38,12 @@ const cardVariants: Variants = {
 type FeaturedEquipmentProps = {
   equipment: Equipment[]
   error?: string | null
-  isAuthenticated?: boolean
   onRetry: () => void
 }
 
 function FeaturedEquipment({
   equipment,
   error,
-  isAuthenticated = false,
   onRetry,
 }: FeaturedEquipmentProps) {
   return (
@@ -74,10 +72,7 @@ function FeaturedEquipment({
                   variants={cardVariants}
                   className="h-full"
                 >
-                  <EquipmentCard
-                    equipment={item}
-                    isAuthenticated={isAuthenticated}
-                  />
+                  <EquipmentCard equipment={item} />
                 </motion.li>
               ))}
             </motion.ul>

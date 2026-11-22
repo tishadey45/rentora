@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { GoogleAuthButton } from "@/components/auth/google-auth-button";
 import { PasswordInput } from "@/components/auth/password-input";
@@ -14,6 +15,8 @@ import { getRedirectFromLocation } from "@/lib/safe-redirect";
 import toast from "react-hot-toast";
 
 function LoginForm() {
+  const router = useRouter();
+
   const onSubmit = async (e: React.SubmitEvent<HTMLElement>) => {
     e.preventDefault();
 
@@ -23,21 +26,21 @@ function LoginForm() {
       password: string;
     };
 
-    console.log(user);
+    const redirectTo = getRedirectFromLocation();
 
     const { data, error } = await authClient.signIn.email({
       ...user,
-      callbackURL: getRedirectFromLocation(),
+      callbackURL: redirectTo,
     });
 
     if (data) {
       toast.success("Sign In successful!");
-      console.log(data);
+      router.replace(redirectTo);
+      router.refresh();
     }
 
     if (error) {
       toast.error("Something went error!");
-      console.log(error);
     }
   };
 

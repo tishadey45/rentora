@@ -8,6 +8,8 @@ import { buttonVariants } from "@/components/ui/button"
 import { cn } from "cn"
 import { requireDashboardRole } from "@/lib/dashboard-session"
 
+export const instant = false
+
 export default async function MyEquipmentPage() {
   await requireDashboardRole("owner")
 

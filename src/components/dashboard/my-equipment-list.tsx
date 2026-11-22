@@ -270,7 +270,7 @@ function MyEquipmentTable({
                   "h-9"
                 )}
               >
-                View
+                View Details
               </Link>
               <Link
                 href={`/dashboard/edit-equipment/${item.id}`}

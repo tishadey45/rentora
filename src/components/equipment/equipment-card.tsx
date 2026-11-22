@@ -1,5 +1,5 @@
-import Image from "next/image"
 import Link from "next/link"
+import Image from "next/image"
 import { ArrowRight, BadgeCheck, MapPin, User } from "lucide-react"
 import { cn } from "cn"
 
@@ -34,18 +34,11 @@ const availabilityConfig: Record<
 
 type EquipmentCardProps = {
   equipment: Equipment
-  isAuthenticated?: boolean
 }
 
-function EquipmentCard({
-  equipment,
-  isAuthenticated = false,
-}: EquipmentCardProps) {
+function EquipmentCard({ equipment }: EquipmentCardProps) {
   const availability = availabilityConfig[equipment.availability]
-  const detailsHref = `/equipment/${equipment.id}`
-  const href = isAuthenticated
-    ? detailsHref
-    : `/login?redirect=${encodeURIComponent(detailsHref)}`
+  const href = `/equipment/${equipment.id}`
 
   return (
     <Card className="group/card h-full gap-0 p-0 transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover">

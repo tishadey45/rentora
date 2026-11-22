@@ -10,13 +10,7 @@ import {
 } from "@/lib/equipment/get-featured-equipment"
 import type { Equipment } from "@/types/equipment"
 
-type FeaturedEquipmentSectionProps = {
-  isAuthenticated?: boolean
-}
-
-function FeaturedEquipmentSection({
-  isAuthenticated = false,
-}: FeaturedEquipmentSectionProps) {
+function FeaturedEquipmentSection() {
   const [equipment, setEquipment] = useState<Equipment[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -67,7 +61,6 @@ function FeaturedEquipmentSection({
     <FeaturedEquipment
       equipment={equipment}
       error={error}
-      isAuthenticated={isAuthenticated}
       onRetry={handleRetry}
     />
   )
