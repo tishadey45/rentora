@@ -20,6 +20,8 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Muted } from "@/components/ui/typography"
 import { createEquipment } from "@/lib/equipment/create-equipment"
+import { updateEquipment } from "@/lib/equipment/update-equipment"
+import type { MyEquipmentItem } from "@/lib/equipment/get-my-equipment"
 import {
   EQUIPMENT_CATEGORIES,
   type EquipmentAvailability,
@@ -158,14 +160,42 @@ function Field({
 }
 
 type EquipmentFormProps = {
-  ownerId: string
-  ownerName: string
-  ownerEmail: string
+  ownerId?: string
+  ownerName?: string
+  ownerEmail?: string
+  equipmentId?: string
+  equipment?: MyEquipmentItem
 }
 
-function EquipmentForm({ ownerId, ownerName, ownerEmail }: EquipmentFormProps) {
+function EquipmentForm({
+  ownerId,
+  ownerName,
+  ownerEmail,
+  equipmentId,
+  equipment,
+}: EquipmentFormProps) {
   const router = useRouter()
-  const [values, setValues] = useState<FormValues>(initialValues)
+  const [values, setValues] = useState<FormValues>(() => {
+    if (equipment) {
+      return {
+        name: equipment.name,
+        description: equipment.description,
+        category: equipment.category,
+        location: equipment.location,
+        brand: equipment.brand ?? "",
+        model: equipment.model ?? "",
+        condition: equipment.condition ?? "",
+        rentalPrice: String(equipment.rentalPrice),
+        rentalType: equipment.rentalType,
+        availableQuantity: String(equipment.availableQuantity),
+        availability: equipment.availability,
+        image: equipment.image,
+        imageAlt: equipment.imageAlt ?? "",
+        rentalTerms: "",
+      }
+    }
+    return initialValues
+  })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [failedPreviewUrl, setFailedPreviewUrl] = useState<string | null>(null)
@@ -195,6 +225,29 @@ function EquipmentForm({ ownerId, ownerName, ownerEmail }: EquipmentFormProps) {
     setSubmitting(true)
     setErrors({})
 
+    if (equipmentId) {
+      const result = await updateEquipment(equipmentId, {
+        name: values.name.trim(),
+        category: values.category,
+        rentalPrice: Number(values.rentalPrice),
+        availableQuantity: Number(values.availableQuantity),
+        description: values.description.trim(),
+        image: values.image.trim(),
+      })
+
+      if (result.status === "error") {
+        setSubmitting(false)
+        setErrors({ form: result.message })
+        toast.error(result.message)
+        return
+      }
+
+      toast.success("Equipment updated successfully.")
+      router.push("/dashboard/my-equipment")
+      router.refresh()
+      return
+    }
+
     const result = await createEquipment({
       name: values.name.trim(),
       description: values.description.trim(),
@@ -211,9 +264,9 @@ function EquipmentForm({ ownerId, ownerName, ownerEmail }: EquipmentFormProps) {
       imageAlt: values.imageAlt.trim() || undefined,
       rentalTerms: values.rentalTerms.trim(),
       owner: {
-        id: ownerId,
-        name: ownerName,
-        email: ownerEmail,
+        id: ownerId!,
+        name: ownerName!,
+        email: ownerEmail!,
         verified: false,
       },
     })
@@ -547,40 +600,43 @@ function EquipmentForm({ ownerId, ownerName, ownerEmail }: EquipmentFormProps) {
         </div>
       </Card>
 
-      <Card className="p-6">
-        <h2 className="font-heading text-lg font-semibold">
-          Owner information
-        </h2>
-        <Muted className="mt-1">
-          This information comes from your signed-in owner account.
-        </Muted>
+      {!equipmentId && (
+        <Card className="p-6">
+          <h2 className="font-heading text-lg font-semibold">
+            Owner information
+          </h2>
+          <Muted className="mt-1">
+            This information comes from your signed-in owner account.
+          </Muted>
 
-        <div className="mt-6 grid gap-5 md:grid-cols-2">
-          <Field label="Owner Name" htmlFor="owner-name">
-            <Input
-              id="owner-name"
-              defaultValue={ownerName}
-              readOnly
-              className="h-11"
-            />
-          </Field>
-          <Field label="Owner Email" htmlFor="owner-email">
-            <Input
-              id="owner-email"
-              defaultValue={ownerEmail}
-              readOnly
-              className="h-11"
-            />
-          </Field>
-        </div>
-      </Card>
+          <div className="mt-6 grid gap-5 md:grid-cols-2">
+            <Field label="Owner Name" htmlFor="owner-name">
+              <Input
+                id="owner-name"
+                defaultValue={ownerName ?? ""}
+                readOnly
+                className="h-11"
+              />
+            </Field>
+            <Field label="Owner Email" htmlFor="owner-email">
+              <Input
+                id="owner-email"
+                defaultValue={ownerEmail ?? ""}
+                readOnly
+                className="h-11"
+              />
+            </Field>
+          </div>
+        </Card>
+      )}
 
       <div className="flex flex-col items-start justify-between gap-4 rounded-xl border border-border bg-card p-5 shadow-card sm:flex-row sm:items-center">
         <Muted className="text-xs">
           {errors.form ?? (
             <>
-              New listings are submitted for review and appear as pending until
-              an admin approves them.
+              {equipmentId
+                ? "Changes will be submitted and reviewed."
+                : "New listings are submitted for review and appear as pending until an admin approves them."}
             </>
           )}
         </Muted>
@@ -590,7 +646,11 @@ function EquipmentForm({ ownerId, ownerName, ownerEmail }: EquipmentFormProps) {
           size="lg"
           disabled={submitting}
         >
-          {submitting ? "Submitting..." : "Submit for approval"}
+          {submitting
+            ? "Saving..."
+            : equipmentId
+              ? "Save changes"
+              : "Submit for approval"}
         </Button>
       </div>
     </form>
