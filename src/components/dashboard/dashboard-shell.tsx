@@ -55,7 +55,7 @@ const navByRole: Record<DashboardRole, NavItem[]> = {
   ],
   admin: [
     { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
-    { label: "All Users", href: "/dashboard/users", icon: Users },
+    { label: "All Users", href: "/dashboard/admin/users", icon: Users },
     { label: "All Equipment", href: "/dashboard/equipment", icon: Wrench },
     { label: "All Rentals", href: "/dashboard/rentals", icon: ClipboardList },
     { label: "Profile", href: "/dashboard/profile", icon: UserRound },
