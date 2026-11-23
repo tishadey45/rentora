@@ -11,6 +11,16 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  account: {
+    accountLinking: {
+      // Allow "Sign in with Google" to link to an existing account that has the
+      // same email (e.g. an email/password account). Same-email only; different
+      // emails are still rejected.
+      enabled: true,
+      trustedProviders: ["google"],
+      requireLocalEmailVerified: false,
+    },
+  },
   user: {
     additionalFields: {
       role: {
