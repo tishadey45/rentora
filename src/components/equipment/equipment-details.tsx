@@ -84,6 +84,7 @@ function EquipmentDetailsView({ equipment }: EquipmentDetailsViewProps) {
           </div>
 
           <EquipmentActions
+            equipmentId={equipment.id}
             equipmentName={equipment.name}
             availableQuantity={equipment.availableQuantity}
           />

@@ -7,11 +7,13 @@ import { BookingDialog } from "@/components/equipment/booking-dialog"
 import { Button } from "@/components/ui/button"
 
 type EquipmentActionsProps = {
+  equipmentId: string
   equipmentName: string
   availableQuantity: number
 }
 
 function EquipmentActions({
+  equipmentId,
   equipmentName,
   availableQuantity,
 }: EquipmentActionsProps) {
@@ -23,6 +25,7 @@ function EquipmentActions({
     <div className="flex flex-col gap-3 sm:flex-row">
       <div className="sm:flex-1">
         <BookingDialog
+          equipmentId={equipmentId}
           equipmentName={equipmentName}
           maxQuantity={availableQuantity}
         />

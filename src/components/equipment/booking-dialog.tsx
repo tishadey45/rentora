@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState, type FormEvent } from "react"
+import { useRouter } from "next/navigation"
 import { CalendarDays } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -17,19 +18,80 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { createBooking } from "@/lib/bookings/create-booking"
 
 type BookingDialogProps = {
+  equipmentId: string
   equipmentName: string
   maxQuantity: number
 }
 
-function BookingDialog({ equipmentName, maxQuantity }: BookingDialogProps) {
+function BookingDialog({
+  equipmentId,
+  equipmentName,
+  maxQuantity,
+}: BookingDialogProps) {
   const [open, setOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+  const router = useRouter()
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  // Today's date for the pickers: dates default to today and past dates are
+  // disabled via the `min` attribute.
+  const today = getTodayDateInput()
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (submitting) return
+
+    const form = formRef.current
+    if (!form) return
+
+    const formData = new FormData(form)
+    const startDate = String(formData.get("startDate") ?? "").trim()
+    const endDate = String(formData.get("endDate") ?? "").trim()
+    const quantity = Number(formData.get("quantity"))
+    const contactNumber = String(formData.get("contactNumber") ?? "").trim()
+    const deliveryAddress = String(formData.get("deliveryAddress") ?? "").trim()
+    const notes = String(formData.get("notes") ?? "").trim()
+
+    if (!startDate || !endDate || !contactNumber || !deliveryAddress) {
+      toast.error("Please fill in all required fields.")
+      return
+    }
+
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      toast.error("Quantity must be a whole number of at least 1.")
+      return
+    }
+
+    if (endDate < startDate) {
+      toast.error("End date must be on or after the start date.")
+      return
+    }
+
+    setSubmitting(true)
+    const result = await createBooking({
+      equipmentId,
+      startDate,
+      endDate,
+      quantity,
+      contactNumber,
+      deliveryAddress,
+      notes: notes || undefined,
+    })
+    setSubmitting(false)
+
+    if (result.status === "error") {
+      // Keep the dialog open with the entered values.
+      toast.error(result.message)
+      return
+    }
+
+    toast.success("Booking request submitted successfully!")
     setOpen(false)
-    toast("Online booking isn't available yet — your request was not submitted.")
+    form.reset()
+    router.push("/dashboard/my-rentals")
   }
 
   return (
@@ -45,12 +107,17 @@ function BookingDialog({ equipmentName, maxQuantity }: BookingDialogProps) {
         <DialogHeader>
           <DialogTitle>Book {equipmentName}</DialogTitle>
           <DialogDescription>
-            Online booking is not available yet. This form is a preview only —
-            submitting it will not create a booking.
+            Submit a rental request for this equipment. The total will be
+            calculated from the owner&apos;s listed price.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="grid gap-4">
+        <form
+          ref={formRef}
+          onSubmit={handleSubmit}
+          className="grid gap-4"
+          noValidate
+        >
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="booking-start-date">Rental start date</Label>
@@ -58,6 +125,8 @@ function BookingDialog({ equipmentName, maxQuantity }: BookingDialogProps) {
                 id="booking-start-date"
                 name="startDate"
                 type="date"
+                defaultValue={today}
+                min={today}
                 required
               />
             </div>
@@ -67,6 +136,8 @@ function BookingDialog({ equipmentName, maxQuantity }: BookingDialogProps) {
                 id="booking-end-date"
                 name="endDate"
                 type="date"
+                defaultValue={today}
+                min={today}
                 required
               />
             </div>
@@ -127,14 +198,24 @@ function BookingDialog({ equipmentName, maxQuantity }: BookingDialogProps) {
             >
               Cancel
             </DialogClose>
-            <Button type="submit" variant="brand">
-              Submit request
+            <Button type="submit" variant="brand" disabled={submitting}>
+              {submitting ? "Submitting..." : "Submit request"}
             </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
   )
+}
+
+// Local "today" as YYYY-MM-DD for the date pickers (matches the browser's
+// date input so past dates can be disabled and today is selected by default).
+function getTodayDateInput() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, "0")
+  const day = String(now.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
 }
 
 export { BookingDialog }
